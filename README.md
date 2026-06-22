@@ -38,7 +38,11 @@ bash scripts/package_dmg.sh
 open dist
 ```
 
-也可以在 GitHub 上推送 `v*` 标签触发 Actions，自动构建并把 `.dmg` 上传到 Releases。
+也可以通过 GitHub Actions 发布：
+
+- 推送 `v*` 标签时，自动构建并把 `.dmg` 发布到 GitHub Releases
+- 手动触发 `Release` 工作流时，可填写 `release_tag`，直接把产物发布到 GitHub Releases
+- 如果手动触发时不填写 `release_tag`，则只上传 workflow artifact，不创建 Release
 
 ## 工作原理
 
