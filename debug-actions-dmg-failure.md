@@ -1,4 +1,4 @@
-# Debug Session: actions-dmg-failure [OPEN]
+# Debug Session: actions-dmg-failure [RESOLVED]
 
 ## 症状
 
@@ -50,3 +50,21 @@
 
 - 本地执行 `bash scripts/package_dmg.sh` 成功
 - 成功产物：`dist/PadSidecar-1.0.0.dmg`
+
+## 追加分析
+
+- 去掉 `--volumeName` 后，用户在 Actions 上又遇到新的 `No such file or directory`
+- 该错误信息不足以精确定位到 `ditto`、`ln` 或 `diskutil` 的哪一步
+- 但连续两次失败都发生在 `diskutil` 方案切换后，说明继续依赖该新链路的收益不高
+
+## 最终修复
+
+- 回退到更成熟的 `hdiutil create -srcfolder` 方案
+- 保留 `WORK_DIR` 与 `STAGING_DIR` 组织方式，不影响 DMG 内容结构
+
+## 最终验证
+
+- 本地执行：
+  - `VERSION=0.0.0-dev.2 BUILD_NUMBER=2 bash scripts/package_dmg.sh`
+- 结果：
+  - 成功生成 `dist/PadSidecar-0.0.0-dev.2.dmg`

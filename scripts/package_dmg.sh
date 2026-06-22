@@ -27,9 +27,11 @@ ln -s /Applications "$STAGING_DIR/Applications"
 
 rm -f "$DMG_PATH"
 
-diskutil image create from \
-  --format UDZO \
-  "$STAGING_DIR" \
+hdiutil create \
+  -volname "$APP_NAME" \
+  -srcfolder "$STAGING_DIR" \
+  -ov \
+  -format UDZO \
   "$DMG_PATH"
 
 echo "Packaged DMG: $DMG_PATH"
