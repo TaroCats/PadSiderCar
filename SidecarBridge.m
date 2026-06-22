@@ -4,7 +4,8 @@
 static id getManager(void) {
     NSBundle *b = [NSBundle bundleWithPath:@"/System/Library/PrivateFrameworks/SidecarCore.framework"];
     [b load];
-    return [NSClassFromString(@"SidecarDisplayManager") sharedManager];
+    Class managerClass = NSClassFromString(@"SidecarDisplayManager");
+    return ((id (*)(id, SEL))objc_msgSend)(managerClass, NSSelectorFromString(@"sharedManager"));
 }
 
 static NSArray *allDevices(id mgr) {

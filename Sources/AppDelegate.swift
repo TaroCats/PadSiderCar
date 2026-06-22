@@ -123,6 +123,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let appState = AppState()
     private var menu: NSMenu!
     private let menuWidth: CGFloat = 210
+    private let firstLaunchTipKey = "PadSidecar_hasShownFirstLaunchTip"
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
@@ -155,6 +156,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         if SidecarController.shared.currentStatus() == .connected {
             SidecarController.shared.captureConnectedDeviceId()
         }
+
+        showFirstLaunchTipIfNeeded()
     }
 
     private func updateIcon() {
@@ -263,6 +266,36 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             alert.alertStyle = .informational
             alert.addButton(withTitle: "好的")
             alert.runModal()
+        }
+    }
+
+    private func showFirstLaunchTipIfNeeded() {
+        guard !UserDefaults.standard.bool(forKey: firstLaunchTipKey) else { return }
+
+        UserDefaults.standard.set(true, forKey: firstLaunchTipKey)
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
+            self?.showFirstLaunchTip()
+        }
+    }
+
+    private func showFirstLaunchTip() {
+        NSApp.activate(ignoringOtherApps: true)
+
+        let alert = NSAlert()
+        alert.messageText = "PadSidecar 已启动"
+        alert.informativeText = """
+        PadSidecar 是菜单栏应用，启动后不会弹出主窗口。
+
+        请查看屏幕右上角菜单栏中的 iPad 图标，并点击它来连接、断开或开启自动模式。
+        """
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: "打开菜单")
+        alert.addButton(withTitle: "知道了")
+
+        let response = alert.runModal()
+        if response == .alertFirstButtonReturn {
+            statusItem.button?.performClick(nil)
         }
     }
 }

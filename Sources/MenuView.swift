@@ -40,7 +40,7 @@ struct MenuView: View {
             }
             .toggleStyle(.switch)
             .padding(.horizontal, 12).padding(.vertical, 6)
-            .onChange(of: appState.autoModeEnabled) { newValue in
+            .onChange(of: appState.autoModeEnabled) {
                 appState.toggleAutoMode()
             }
             

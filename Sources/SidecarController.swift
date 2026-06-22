@@ -4,7 +4,19 @@ class SidecarController {
     static let shared = SidecarController()
 
     private var bridgePath: String {
-        Bundle.main.path(forResource: "SidecarBridge", ofType: nil) ?? "/Users/taro/Git/padSidecar/SidecarBridge"
+        let candidates = [
+            Bundle.main.path(forResource: "SidecarBridge", ofType: nil),
+            Bundle.main.executableURL?
+                .deletingLastPathComponent()
+                .appendingPathComponent("SidecarBridge")
+                .path
+        ].compactMap { $0 }
+
+        for candidate in candidates where FileManager.default.isExecutableFile(atPath: candidate) {
+            return candidate
+        }
+
+        return "SidecarBridge"
     }
 
     enum Status { case connected, disconnected, unknown }
