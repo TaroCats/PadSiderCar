@@ -1,150 +1,51 @@
----
-AIGC:
-    Label: "1"
-    ContentProducer: 001191440300708461136T1XGW3
-    ProduceID: 0b45cb7c70da02cc2552e8764ddb8c35_3f6a1d256d9011f18805525400d9a7a1
-    ReservedCode1: 3yzHcUlq1p3smv3pggKCtziJBEuq5JrIqxKSuaxEbUn9oXWJumBj8EW7Ax7VKxfBxAUwSTRpLQYYRLE7H2UGG/qi97bIvcwMzUAN5kGgdyC9XUKsSYYqe+FD3WPQRa/fZoV6tH3tRT47PYX6IdTzzYwB/fyXGrSjYQbK1HpaDlGmRw3qqKU2FHGpZ2Y=
-    ContentPropagator: 001191440300708461136T1XGW3
-    PropagateID: 0b45cb7c70da02cc2552e8764ddb8c35_3f6a1d256d9011f18805525400d9a7a1
-    ReservedCode2: 3yzHcUlq1p3smv3pggKCtziJBEuq5JrIqxKSuaxEbUn9oXWJumBj8EW7Ax7VKxfBxAUwSTRpLQYYRLE7H2UGG/qi97bIvcwMzUAN5kGgdyC9XUKsSYYqe+FD3WPQRa/fZoV6tH3tRT47PYX6IdTzzYwB/fyXGrSjYQbK1HpaDlGmRw3qqKU2FHGpZ2Y=
----
+# PadSidecar
 
+> macOS 菜单栏助手：连接、断开并自动管理 iPad Sidecar（随航）扩展屏。
 
+## 功能
 
-# Sidecar Sleep Watch
+- 手动连接或断开 iPad 扩展屏
+- 睡眠时自动断开，唤醒后自动重连
+- 设备重新接入时自动连接
+- 菜单栏显示当前连接状态
 
-> macOS 守护脚本：睡眠时自动断开 iPad 扩展屏，唤醒时自动重连。
+## 项目结构
 
-## 功能概述
-
-- 🔵 **睡眠断开**：macOS 进入睡眠 / 关闭显示器时，自动断开 Sidecar（随航）iPad 连接
-- 🟢 **唤醒重连**：macOS 唤醒后延迟 5 秒（可配置），自动重连 iPad 作为扩展屏
-- 📝 **完整日志**：所有操作记录到 `~/Library/Logs/sidecar_sleep_watch.log`
-- 🔄 **多重策略**：断开与重连均内置多种 fallback 策略，确保可靠性
-
-## 系统要求
-
-- macOS 12 (Monterey) 或更高版本
-- 已配对的 iPad（支持 Sidecar 随航）
-- Python 3（macOS 自带）
-- **权限**：辅助功能权限（系统设置 → 隐私与安全性 → 辅助功能 → 允许终端/launchd）
-
-## 文件说明
-
-| 文件 | 用途 |
+| 文件/目录 | 用途 |
 |------|------|
-| `sidecar_sleep_watch.py` | 主守护脚本 |
-| `com.sidecar.sleepwatch.plist` | LaunchAgent 配置文件 |
-| `setup.sh` | 一键安装 / 卸载 / 状态查看脚本 |
-| `README.md` | 本文档 |
+| `Sources/` | Swift 源码 |
+| `PadSidecar.app/` | 已打包的 macOS 应用 |
+| `SidecarBridge` | 调用 SidecarCore.framework 的桥接工具 |
+| `SidecarBridge.m` | 桥接工具源码 |
+| `icon.iconset/` | 应用图标资源 |
 
-## 快速安装
+## 运行方式
+
+直接启动已打包应用：
 
 ```bash
-# 1. 确保脚本有执行权限
-chmod +x setup.sh
-
-# 2. 一键安装
-./setup.sh install
+open PadSidecar.app
 ```
 
-安装完成后，守护进程即刻开始运行，无需重启。
+或在 Xcode / Swift 构建环境中自行编译 `Sources/` 下的代码。
 
 ## 工作原理
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                  sidecar_sleep_watch.py                  │
-│                                                         │
-│  log stream ──→ 监听 powerd 事件                         │
-│       │                                                 │
-│       ├── "sleep" ──→ disconnect_sidecar()              │
-│       │                 ├─ osascript GUI 点击            │
-│       │                 ├─ pkill SidecarRelay            │
-│       │                 └─ defaults delete + killall     │
-│       │                                                 │
-│       └── "wake"  ──→ 等待 5 秒 ──→ reconnect_sidecar() │
-│                         ├─ osascript GUI 点击            │
-│                         ├─ defaults write 触发           │
-│                         └─ killall -HUP SidecarRelay     │
-└─────────────────────────────────────────────────────────┘
-```
+- 菜单栏应用通过 `SidecarBridge` 查询当前 Sidecar 状态
+- 开启“睡眠时自动断开”后，应用监听系统睡眠/唤醒事件
+- 开启“设备接入时自动连接”后，应用监听设备变化并尝试重连上次连接的 iPad
 
-## 使用命令
+## 系统要求
 
-```bash
-# 守护进程模式（LaunchAgent 自动管理）
-# 安装后自动运行，无需手动启动
+- macOS 12 或更高版本
+- 已配对且支持 Sidecar 的 iPad
+- 允许应用访问必要的系统能力
 
-# 查看 Sidecar 连接状态
-/usr/local/bin/sidecar_sleep_watch.py --status
+## 注意事项
 
-# 手动断开
-/usr/local/bin/sidecar_sleep_watch.py --disconnect
-
-# 手动重连
-/usr/local/bin/sidecar_sleep_watch.py --reconnect
-
-# 自定义唤醒延迟（10 秒）
-/usr/local/bin/sidecar_sleep_watch.py --delay 10
-
-# 查看实时日志
-tail -f ~/Library/Logs/sidecar_sleep_watch.log
-```
-
-## 管理命令
-
-```bash
-./setup.sh status      # 查看运行状态
-./setup.sh uninstall   # 卸载
-```
-
-## 故障排查
-
-### 辅助功能权限
-系统设置 → 隐私与安全性 → 辅助功能 → 确保终端（Terminal）或 `/usr/bin/python3` 已勾选。
-
-### 查看日志
-```bash
-# 主日志
-tail -f ~/Library/Logs/sidecar_sleep_watch.log
-
-# 错误日志
-tail -f ~/Library/Logs/sidecar_sleep_watch.stderr.log
-```
-
-### 手动测试守护进程
-```bash
-# 前台运行（Ctrl+C 退出）
-/usr/local/bin/sidecar_sleep_watch.py
-```
-
-### LaunchAgent 不运行
-```bash
-# 检查服务状态
-launchctl list | grep sidecar
-
-# 手动加载
-launchctl load ~/Library/LaunchAgents/com.sidecar.sleepwatch.plist
-
-# 手动卸载后重新加载
-launchctl bootout gui/$(id -u)/com.sidecar.sleepwatch
-launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.sidecar.sleepwatch.plist
-```
-
-## 高级配置
-
-修改 `/usr/local/bin/sidecar_sleep_watch.py` 中的常量：
-
-```python
-WAKE_RECONNECT_DELAY = 5       # 唤醒后延迟秒数
-SIDECAR_PREFS_DOMAIN = "com.apple.sidecar.display"
-```
-
-修改 plist 中的 `ThrottleInterval` 可控制守护进程崩溃后的重启间隔（默认 5 秒）。
+- `SidecarBridge` 依赖系统私有框架，系统升级后可能需要重新验证兼容性
+- 如果自动连接失败，先确认 iPad 已解锁、靠近 Mac 且使用同一 Apple ID
 
 ## 许可
 
-MIT License — 仅供个人使用，风险自负。
-*（内容由AI生成，仅供参考）*
-*（内容由AI生成，仅供参考）*
+MIT License
